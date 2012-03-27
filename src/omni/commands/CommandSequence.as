@@ -8,10 +8,10 @@ import org.osflash.signals.Signal;
  */
 public class CommandSequence implements ICommand {
 
-	protected var _started:Signal = new Signal ();
-	protected var _nextCommandStarted:Signal = new Signal ();
-	protected var _completed:Signal = new Signal ();
-	protected var _error:Signal = new Signal ();
+	protected var _started:Signal;
+	protected var _completed:Signal;
+	protected var _error:Signal;
+	protected var _nextCommandStarted:Signal;
 
 	protected var _commands:Vector.<ICommand> = new Vector.<ICommand> ();
 	protected var _isPlaying:Boolean = false;
@@ -53,9 +53,9 @@ public class CommandSequence implements ICommand {
 		}
 		_currentCommandIndex = 0;
 		_isPlaying = true;
-		started.dispatch ();
+		if (_started)started.dispatch ();
 
-		execute();
+		execute ();
 	}
 
 	public function execute ():void {
@@ -112,34 +112,38 @@ public class CommandSequence implements ICommand {
 		stopCurrentCommand ();
 
 		if (++ _currentCommandIndex < _commands.length) {
-			_nextCommandStarted.dispatch ();
+			if(_nextCommandStarted) _nextCommandStarted.dispatch ();
 			startNext ();
 		} else {
-			dispatchEnd();
+			dispatchEnd ();
 		}
 	}
 
 	public function dispatchEnd ():void {
-		_completed.dispatch ();
+		if (_completed) _completed.dispatch ();
 	}
 
 	public function dispatchError ():void {
-		_error.dispatch ();
+		if (_error) _error.dispatch ();
 	}
 
 	public function get completed ():Signal {
+		if (! _completed) _completed = new Signal ();
 		return _completed;
 	}
 
 	public function get started ():Signal {
+		if (! _started) _started = new Signal ();
 		return _started;
 	}
 
 	public function get error ():Signal {
+		if (! _error) _error = new Signal ();
 		return _error;
 	}
 
 	public function get nextCommandStarted ():Signal {
+		if (! _nextCommandStarted) _nextCommandStarted = new Signal ();
 		return _nextCommandStarted;
 	}
 
@@ -174,10 +178,19 @@ public class CommandSequence implements ICommand {
 			_commands[i] = null;
 		}
 		_commands.length = 0;
-		_completed.removeAll ();
-		_completed = null;
-	}
 
+		if (_completed)_completed.removeAll ();
+		_completed = null;
+
+		if (_started)_started.removeAll ();
+		_started = null;
+
+		if (_error)_error.removeAll ();
+		_error = null;
+
+		if (_nextCommandStarted)_nextCommandStarted.removeAll ();
+		_nextCommandStarted = null;
+	}
 
 }
 
